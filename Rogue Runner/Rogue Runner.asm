@@ -1,6 +1,6 @@
 ; Following the Edventure Assembler tutorial
 ; to program a Roguelike game on the Atari 8bit
-; Episode 8 Characters to Tiles
+; Graphics test
 
 	org $2000	
 
