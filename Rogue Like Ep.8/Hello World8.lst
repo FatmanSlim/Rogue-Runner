@@ -1,0 +1,892 @@
+mads 2.0.6 build 58 (28 Jan 17)
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+     1 				; Following the Edventure Assembler tutorial
+     2 				; to program a Roguelike game on the Atari 8bit
+     3 				; Episode 8 Player-Missile Graphics
+     4
+     5 					org $2000	
+     6
+     7 = 4000			screen   = $4000  ; Screen buffer
+     8 = 5000			charset  = $5000  ; Character Set
+     9 = 6000			pmg      = $6000  ; Player Missile Data
+    10 = 7000			tiles    = $7000  ; Tile Character Index
+    11
+    12 FFFF> 2000-2044> 20 1A + 	setup_screen()
+    13 2003 20 FC 70			setup_colours()	
+    14 					;load_gfx()
+    15 2006 A9 50 8D F4 02		mva #>charset CHBAS
+    16 200B 20 2A 71			clear_pmg()
+    17 200E 20 41 71			load_pmg()
+    18 2011 20 C1 71			setup_pmg()
+    19 					;load_tiledata()
+    20 2014 20 E4 71			display_map()
+    21 					
+    22 2017 4C 17 20			jmp *
+    23 					
+    24 201A				icl 'hardware.asm'
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\hardware.asm
+     1 = 0230			SDLSTL = $0230  ; Display list starting address
+     2 = 02F4			CHBAS  = $02f4  ; Character Base Register
+     3 = 02C4			COLOR0 = $02c4  ; Colour for %01
+     4 = 02C5			COLOR1 = $02c5  ; Colour for %10
+     5 = 02C6			COLOR2 = $02c6  ; Colour for %11 (normal)
+     6 = 02C7			COLOR3 = $02c7  ; Colour for %11 (inverse)
+     7 = 02C8			COLOR4 = $02c8  ; Colour for %00 (background)
+     8
+     9 				;HPOSM0 = $D004 ; Horizontal position of missile 0
+    10 				;HPOSM1 = $D005 ; Horizontal position of missile 1
+    11 				;HPOSM2 = $D006 ; Horizontal position of missile 2
+    12 				;HPOSM3 = $D007 ; Horizontal position of missile 3
+    13 				;SIZEP0 = $D008 ; Size (width) of player 0 (0-3)
+    14 				;SIZEP1 = $D009 ; Size (width) of player 1 (0-3)
+    15 				;SIZEP2 = $D010 ; Size (width) of player 2 (0-3)
+    16 				;SIZEP3 = $D011 ; Size (width) of player 3 (0-3)
+    17 				;SIZEM = $D00C  ; Size of all missiles
+    18 				;COLPF0 = $D016 ; Colour of playfield 0
+    19 				;COLPF1 = $D017 ; Colour of playfield 1
+    20 				;COLPF2 = $D018 ; Colour of playfield 2
+    21 				;COLPF3 = $D019 ; Colour of playfield 3 / Player 4
+    22 				;COLBK = $D01A  ; Colour of background
+    23 				;PRIOR = $D01B  ; Priority order - which players are on top - bit 4=1 (enable player 4)
+    24 = 02C0			PCOLR0 = $2C0   ; Colour for Player-Missile 0
+    25 = 02C1			PCOLR1 = $2C1   ; Colour for Player-Missile 1
+    26 = 02C2			PCOLR2 = $2C2   ; Colour for Player-Missile 2
+    27 = 02C3			PCOLR3 = $2C3   ; Colour for Player-Missile 3
+    28 				;
+    29 				;MEMTOP = $2E5  ; 741
+    30 				;RAMTOP = $6A   ; 106
+    31
+    32 = D01D			GRACTL = $D01D  ; Enable/disable PMG
+    33 = D407			PMBASE = $D407  ; Player Missile Graphics Base address
+    34 = 026F			GRPRIOR = $26F  ; Player-Missile Priority
+    35 = 022F			SDMCTL = $22F   ; PM Resolution 46 ($2E) = double line resolution
+    36 = D000			HPOSP0 = $D000  ; Horizontal position of player 0
+    37 = D001			HPOSP1 = $D001  ; Horizontal position of player 1
+    38 = D002			HPOSP2 = $D002  ; Horizontal position of player 2
+    39 = D003			HPOSP3 = $D003  ; Horizontal position of player 3
+    40 = D004			HPOSM0 = $D004 ; Horizontal position of missile 0
+    41 = D005			HPOSM1 = $D005 ; Horizontal position of missile 1
+    42 = D006			HPOSM2 = $D006 ; Horizontal position of missile 2
+    43 = D007			HPOSM3 = $D007 ; Horizontal position of missile 3
+    25 201A				icl 'dlist.asm'
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\dlist.asm
+     1 				* --------------------------------------- *
+     2 				* Proc: setup_screen                      *
+     3 				* Sets up the display list for the screen *
+     4 				* --------------------------------------- *
+     5 201A			.proc setup_screen
+     6 = 0070			blank8 = $70    ; 8 blank lines
+     7 = 0040			lms = $40       ; Load Memory Scan
+     8 = 0041			jvb = $41       ; Jump while vertical blank
+     9
+    10 = 0002			antic2 = 2      ; Antic mode 2
+    11 = 0004			antic4 = 4      ; Antic mode 4
+    12 = 0005			antic5 = 5      ; Antic mode 5
+    13
+    14 201A A9 25 8D 30 02 A9 + 	mwa #dlist SDLSTL
+    15 2024 60				rts
+    16
+    17 2025			dlist
+    18 2025 70 70 70			.byte blank8, blank8, blank8
+    19 2028 44 00 40			.byte antic4 + lms, <screen, >screen
+    20 202B 04 04 04 04 04 04		.byte antic4, antic4, antic4, antic4, antic4, antic4
+    21 2031 04 04 04 04 04 04		.byte antic4, antic4, antic4, antic4, antic4, antic4	
+    22 2037 04 04 04 04 04 04		.byte antic4, antic4, antic4, antic4, antic4, antic4
+    23 203D 04 04 04 04 04		.byte antic4, antic4, antic4, antic4, antic4
+    24 2042 41 25 20			.byte jvb, <dlist, >dlist
+    25 					.endp
+    26 					
+    26 2045				icl 'gfx.asm'
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\gfx.asm
+     1 2045				org charset
+     2 5000-54FF> 00 00 00 00 + 	.byte $00, $00, $00, $00, $00, $00, $00, $00 ; 0
+     3 5008 55 55 55 55 55 55 + 	.byte $55, $55, $55, $55, $55, $55, $55, $55 ; 1
+     4 5010 AA AA AA AA AA AA + 	.byte $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA ; 2
+     5 5018 FF FF FF FF FF FF + 	.byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF ; 3
+     6 5020 00 A9 69 69 69 95 + 	.byte $00, $A9, $69, $69, $69, $95, $55, $00 ; 4
+     7 5028 00 A9 A5 A5 A5 59 + 	.byte $00, $A9, $A5, $A5, $A5, $59, $55, $00 ; 5
+     8 5030 A4 54 54 02 A2 52 + 	.byte $A4, $54, $54, $02, $A2, $52, $51, $00 ; 6
+     9 5038 AA A5 15 80 4A 49 + 	.byte $AA, $A5, $15, $80, $4A, $49, $49, $00 ; 7
+    10 5040 00 1A 1A 1A 1A 25 + 	.byte $00, $1A, $1A, $1A, $1A, $25, $15, $05 ; 8
+    11 5048 00 A4 A4 A4 A4 58 + 	.byte $00, $A4, $A4, $A4, $A4, $58, $54, $50 ; 9
+    12 5050 20 1A 19 09 20 1A + 	.byte $20, $1A, $19, $09, $20, $1A, $19, $09 ; 10
+    13 5058 08 A4 54 50 08 A4 + 	.byte $08, $A4, $54, $50, $08, $A4, $54, $50 ; 11
+    14 5060 00 2A 1A 1A 1A 25 + 	.byte $00, $2A, $1A, $1A, $1A, $25, $15, $15 ; 12
+    15 5068 00 A8 A4 A4 A4 58 + 	.byte $00, $A8, $A4, $A4, $A4, $58, $54, $54 ; 13
+    16 5070 00 2A 1A 1A 1A 25 + 	.byte $00, $2A, $1A, $1A, $1A, $25, $15, $05 ; 14
+    17 5078 00 A8 A6 A5 A5 59 + 	.byte $00, $A8, $A6, $A5, $A5, $59, $56, $50 ; 15
+    18 5080 0A A9 59 50 0A A9 + 	.byte $0A, $A9, $59, $50, $0A, $A9, $59, $50 ; 16
+    19 5088 00 2A 9A 5A 5A 65 + 	.byte $00, $2A, $9A, $5A, $5A, $65, $95, $05 ; 17
+    20 5090 00 A8 A4 A4 A4 58 + 	.byte $00, $A8, $A4, $A4, $A4, $58, $54, $50 ; 18
+    21 5098 A0 9A 99 09 A0 9A + 	.byte $A0, $9A, $99, $09, $A0, $9A, $99, $09 ; 19
+    22 50A0 55 A9 A9 A9 A9 A9 + 	.byte $55, $A9, $A9, $A9, $A9, $A9, $A9, $A9 ; 20
+    23 50A8 A9 A9 A9 A9 A9 55 + 	.byte $A9, $A9, $A9, $A9, $A9, $55, $A9, $A9 ; 21
+    24 50B0 A9 55 6A 6A 6A 6A + 	.byte $A9, $55, $6A, $6A, $6A, $6A, $6A, $6A ; 22
+    25 50B8 A9 A9 55 6A 6A 6A + 	.byte $A9, $A9, $55, $6A, $6A, $6A, $6A, $55 ; 23
+    26 50C0 3F CF F3 FC FF FF + 	.byte $3F, $CF, $F3, $FC, $FF, $FF, $FF, $FF ; 24
+    27 50C8 FF FF FF FF 3F CF + 	.byte $FF, $FF, $FF, $FF, $3F, $CF, $F3, $FC ; 25
+    28 50D0 F3 CF 3F FF 3F CF + 	.byte $F3, $CF, $3F, $FF, $3F, $CF, $F3, $FC ; 26
+    29 50D8 AA 5A 55 55 55 55 + 	.byte $AA, $5A, $55, $55, $55, $55, $55, $55 ; 27
+    30 50E0 AA AA 56 56 56 56 + 	.byte $AA, $AA, $56, $56, $56, $56, $56, $56 ; 28
+    31 50E8 56 56 56 56 56 56 + 	.byte $56, $56, $56, $56, $56, $56, $56, $55 ; 29
+    32 50F0 00 0F 3F 3F 30 0F + 	.byte $00, $0F, $3F, $3F, $30, $0F, $3F, $3C ; 30
+    33 50F8 00 F0 FC FC 0C F0 + 	.byte $00, $F0, $FC, $FC, $0C, $F0, $FC, $3C ; 31
+    34 5100 1C 3F 3F 1F 3F 3F + 	.byte $1C, $3F, $3F, $1F, $3F, $3F, $3F, $00 ; 32
+    35 5108 3C FC DC FC FC FC + 	.byte $3C, $FC, $DC, $FC, $FC, $FC, $FC, $00 ; 33
+    36 5110 00 00 1D 3F 3F 3F + 	.byte $00, $00, $1D, $3F, $3F, $3F, $3C, $3C ; 34
+    37 5118 00 00 3C 00 CF CF + 	.byte $00, $00, $3C, $00, $CF, $CF, $CF, $CF ; 35
+    38 5120 3C 3C 3F 3D 3F 3F + 	.byte $3C, $3C, $3F, $3D, $3F, $3F, $3F, $00 ; 36
+    39 5128 CF CF CF CF CF 00 + 	.byte $CF, $CF, $CF, $CF, $CF, $00, $3C, $00 ; 37
+    40 5130 00 00 1F 20 2F 2F + 	.byte $00, $00, $1F, $20, $2F, $2F, $20, $2F ; 38
+    41 5138 00 00 F4 08 F8 F8 + 	.byte $00, $00, $F4, $08, $F8, $F8, $08, $F8 ; 39
+    42 5140 2F 12 19 14 1D 1F + 	.byte $2F, $12, $19, $14, $1D, $1F, $1F, $00 ; 40
+    43 5148 F8 84 64 14 74 F4 + 	.byte $F8, $84, $64, $14, $74, $F4, $F4, $00 ; 41
+    44 5150 00 2F 11 19 14 2D + 	.byte $00, $2F, $11, $19, $14, $2D, $2F, $2F ; 42
+    45 5158 00 F8 44 64 14 78 + 	.byte $00, $F8, $44, $64, $14, $78, $F8, $F8 ; 43
+    46 5160 20 20 15 15 1F 1F + 	.byte $20, $20, $15, $15, $1F, $1F, $1F, $00 ; 44
+    47 5168 08 08 54 54 F4 F4 + 	.byte $08, $08, $54, $54, $F4, $F4, $F4, $00 ; 45
+    48 5170 AA 55 65 75 75 76 + 	.byte $AA, $55, $65, $75, $75, $76, $47, $57 ; 46
+    49 5178 AA 56 66 76 76 76 + 	.byte $AA, $56, $66, $76, $76, $76, $46, $56 ; 47
+    50 5180 67 74 75 75 45 55 + 	.byte $67, $74, $75, $75, $45, $55, $55, $55 ; 48
+    51 5188 66 76 76 76 46 56 + 	.byte $66, $76, $76, $76, $46, $56, $56, $56 ; 49
+    52 5190 AA 55 55 55 45 45 + 	.byte $AA, $55, $55, $55, $45, $45, $65, $54 ; 50
+    53 5198 AA 56 56 56 46 46 + 	.byte $AA, $56, $56, $56, $46, $46, $66, $56 ; 51
+    54 51A0 54 56 45 45 65 55 + 	.byte $54, $56, $45, $45, $65, $55, $55, $55 ; 52
+    55 51A8 56 56 46 46 66 56 + 	.byte $56, $56, $46, $46, $66, $56, $56, $56 ; 53
+    56 51B0 40 62 64 66 66 66 + 	.byte $40, $62, $64, $66, $66, $66, $66, $26 ; 54
+    57 51B8 00 64 98 24 48 60 + 	.byte $00, $64, $98, $24, $48, $60, $64, $64 ; 55
+    58 51C0 46 52 54 55 55 55 + 	.byte $46, $52, $54, $55, $55, $55, $55, $00 ; 56
+    59 51C8 64 64 64 24 44 50 + 	.byte $64, $64, $64, $24, $44, $50, $54, $00 ; 57
+    60 51D0 00 55 00 00 00 01 + 	.byte $00, $55, $00, $00, $00, $01, $09, $19 ; 58
+    61 51D8 00 55 09 19 99 99 + 	.byte $00, $55, $09, $19, $99, $99, $99, $99 ; 59
+    62 51E0 19 19 19 19 19 00 + 	.byte $19, $19, $19, $19, $19, $00, $55, $00 ; 60
+    63 51E8 99 99 99 99 99 01 + 	.byte $99, $99, $99, $99, $99, $01, $55, $00 ; 61
+    64 51F0 00 A9 A9 80 80 05 + 	.byte $00, $A9, $A9, $80, $80, $05, $05, $15 ; 62
+    65 51F8 AA 56 56 52 40 44 + 	.byte $AA, $56, $56, $52, $40, $44, $45, $41 ; 63
+    66 5200 15 15 10 10 14 14 + 	.byte $15, $15, $10, $10, $14, $14, $14, $04 ; 64
+    67 5208 00 AA AA 02 02 50 + 	.byte $00, $AA, $AA, $02, $02, $50, $50, $54 ; 65
+    68 5210 00 6A 69 69 69 56 + 	.byte $00, $6A, $69, $69, $69, $56, $55, $00 ; 66
+    69 5218 54 54 04 04 14 14 + 	.byte $54, $54, $04, $04, $14, $14, $14, $10 ; 67
+    70 5220 AA 95 95 85 01 11 + 	.byte $AA, $95, $95, $85, $01, $11, $51, $41 ; 68
+    71 5228 A0 40 45 45 45 45 + 	.byte $A0, $40, $45, $45, $45, $45, $40, $50 ; 69
+    72 5230 40 14 01 45 40 12 + 	.byte $40, $14, $01, $45, $40, $12, $55, $16 ; 70
+    73 5238 A8 58 58 58 58 58 + 	.byte $A8, $58, $58, $58, $58, $58, $58, $50 ; 71
+    74 5240 05 42 6A 29 49 59 + 	.byte $05, $42, $6A, $29, $49, $59, $19, $49 ; 72
+    75 5248 01 14 40 51 01 44 + 	.byte $01, $14, $40, $51, $01, $44, $95, $54 ; 73
+    76 5250 0A 01 51 51 51 51 + 	.byte $0A, $01, $51, $51, $51, $51, $01, $05 ; 74
+    77 5258 90 41 A9 A8 61 65 + 	.byte $90, $41, $A9, $A8, $61, $65, $64, $61 ; 75
+    78 5260 2A 25 25 25 25 25 + 	.byte $2A, $25, $25, $25, $25, $25, $25, $05 ; 76
+    79 5268 01 60 85 81 84 84 + 	.byte $01, $60, $85, $81, $84, $84, $84, $84 ; 77
+    80 5270 59 19 09 49 59 19 + 	.byte $59, $19, $09, $49, $59, $19, $49, $49 ; 78
+    81 5278 84 84 A0 A8 AA 6A + 	.byte $84, $84, $A0, $A8, $AA, $6A, $1A, $05 ; 79
+    82 5280 4A 4A 42 04 80 A8 + 	.byte $4A, $4A, $42, $04, $80, $A8, $AA, $55 ; 80
+    83 5288 65 64 60 61 65 64 + 	.byte $65, $64, $60, $61, $65, $64, $61, $61 ; 81
+    84 5290 40 09 52 42 12 12 + 	.byte $40, $09, $52, $42, $12, $12, $12, $12 ; 82
+    85 5298 61 A1 81 90 82 2A + 	.byte $61, $A1, $81, $90, $82, $2A, $AA, $55 ; 83
+    86 52A0 12 12 0A 2A AA A9 + 	.byte $12, $12, $0A, $2A, $AA, $A9, $A4, $50 ; 84
+    87 52A8 AA A8 80 8F 4F 4F + 	.byte $AA, $A8, $80, $8F, $4F, $4F, $00, $8F ; 85
+    88 52B0 AA 96 96 80 AA 96 + 	.byte $AA, $96, $96, $80, $AA, $96, $96, $40 ; 86
+    89 52B8 4F 4F 0F 87 41 47 + 	.byte $4F, $4F, $0F, $87, $41, $47, $0F, $8F ; 87
+    90 52C0 4F 4F 00 2A 2A 2A + 	.byte $4F, $4F, $00, $2A, $2A, $2A, $25, $25 ; 88
+    91 52C8 80 0F FF FF F0 0F + 	.byte $80, $0F, $FF, $FF, $F0, $0F, $FF, $FF ; 89
+    92 52D0 3F FF FF C0 3F FF + 	.byte $3F, $FF, $FF, $C0, $3F, $FF, $FF, $FF ; 90
+    93 52D8 FF FF FF FF 5F FF + 	.byte $FF, $FF, $FF, $FF, $5F, $FF, $FF, $FF ; 91
+    94 52E0 DF 47 77 13 CF FF + 	.byte $DF, $47, $77, $13, $CF, $FF, $FF, $FF ; 92
+    95 52E8 FF FF 00 A9 A9 A6 + 	.byte $FF, $FF, $00, $A9, $A9, $A6, $51, $51 ; 93
+    96 52F0 FF FF 00 AA AA AA + 	.byte $FF, $FF, $00, $AA, $AA, $AA, $55, $55 ; 94
+    97 52F8 FC FF FF 03 FC FF + 	.byte $FC, $FF, $FF, $03, $FC, $FF, $FF, $FF ; 95
+    98 5300 02 F0 FF FF 0F F0 + 	.byte $02, $F0, $FF, $FF, $0F, $F0, $FF, $FF ; 96
+    99 5308 FF FF FF FF F5 FF + 	.byte $FF, $FF, $FF, $FF, $F5, $FF, $FF, $FF ; 97
+   100 5310 F7 D1 DD C4 F3 FF + 	.byte $F7, $D1, $DD, $C4, $F3, $FF, $FF, $FF ; 98
+   101 5318 FF FF 00 6A 6A 9A + 	.byte $FF, $FF, $00, $6A, $6A, $9A, $45, $45 ; 99
+   102 5320 AA 2A 02 F2 F1 F1 + 	.byte $AA, $2A, $02, $F2, $F1, $F1, $00, $F2 ; 100
+   103 5328 F1 F1 F0 D2 41 D1 + 	.byte $F1, $F1, $F0, $D2, $41, $D1, $F0, $F2 ; 101
+   104 5330 AA 96 96 02 AA 96 + 	.byte $AA, $96, $96, $02, $AA, $96, $96, $01 ; 102
+   105 5338 F1 F1 00 A8 A8 A8 + 	.byte $F1, $F1, $00, $A8, $A8, $A8, $58, $58 ; 103
+   106 5340 00 00 3F 3F 30 30 + 	.byte $00, $00, $3F, $3F, $30, $30, $30, $30 ; 104
+   107 5348 00 00 FC FC 0C 0C + 	.byte $00, $00, $FC, $FC, $0C, $0C, $0C, $0C ; 105
+   108 5350 30 30 30 30 3F 3F + 	.byte $30, $30, $30, $30, $3F, $3F, $00, $00 ; 106
+   109 5358 0C 0C 0C 0C FC FC + 	.byte $0C, $0C, $0C, $0C, $FC, $FC, $00, $00 ; 107
+   110 5360 00 00 FF FF 00 00 + 	.byte $00, $00, $FF, $FF, $00, $00, $00, $00 ; 108
+   111 5368 00 00 00 00 FF FF + 	.byte $00, $00, $00, $00, $FF, $FF, $00, $00 ; 109
+   112 5370 30 30 30 30 30 30 + 	.byte $30, $30, $30, $30, $30, $30, $30, $30 ; 110
+   113 5378 0C 0C 0C 0C 0C 0C + 	.byte $0C, $0C, $0C, $0C, $0C, $0C, $0C, $0C ; 111
+   114 5380 30 30 F0 F0 00 00 + 	.byte $30, $30, $F0, $F0, $00, $00, $00, $00 ; 112
+   115 5388 0C 0C 0F 0F 00 00 + 	.byte $0C, $0C, $0F, $0F, $00, $00, $00, $00 ; 113
+   116 5390 00 00 00 00 F0 F0 + 	.byte $00, $00, $00, $00, $F0, $F0, $30, $30 ; 114
+   117 5398 00 00 00 00 0F 0F + 	.byte $00, $00, $00, $00, $0F, $0F, $0C, $0C ; 115
+   118 53A0 00 A9 69 69 69 80 + 	.byte $00, $A9, $69, $69, $69, $80, $B3, $3D ; 116
+   119 53A8 00 A9 A5 A5 A5 09 + 	.byte $00, $A9, $A5, $A5, $A5, $09, $31, $F0 ; 117
+   120 53B0 B6 B6 9D 3F BC B1 + 	.byte $B6, $B6, $9D, $3F, $BC, $B1, $45, $00 ; 118
+   121 53B8 72 71 D1 F0 F2 B1 + 	.byte $72, $71, $D1, $F0, $F2, $B1, $61, $00 ; 119
+   122 53C0 02 AA 66 59 64 90 + 	.byte $02, $AA, $66, $59, $64, $90, $84, $14 ; 120
+   123 53C8 00 A5 25 85 61 18 + 	.byte $00, $A5, $25, $85, $61, $18, $48, $50 ; 121
+   124 53D0 90 84 14 90 85 6A + 	.byte $90, $84, $14, $90, $85, $6A, $95, $40 ; 122
+   125 53D8 18 48 50 18 48 A4 + 	.byte $18, $48, $50, $18, $48, $A4, $58, $04 ; 123
+   126 53E0 00 55 3F 50 6F 3F + 	.byte $00, $55, $3F, $50, $6F, $3F, $00, $3F ; 124
+   127 53E8 00 55 FD 01 FD FD + 	.byte $00, $55, $FD, $01, $FD, $FD, $11, $79 ; 125
+   128 53F0 3F 00 3F 5F 60 3F + 	.byte $3F, $00, $3F, $5F, $60, $3F, $55, $00 ; 126
+   129 53F8 79 21 FD FD 01 FD + 	.byte $79, $21, $FD, $FD, $01, $FD, $55, $00 ; 127
+   130
+    27 5400				icl 'pmgdata.asm'
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\pmgdata.asm
+     1 5400			pmgdata
+     2
+     3 				; PCOLR0 (Brown)
+     4 5400 B8 44 02 88 7C D6 + .byte $B8, $44, $02, $88, $7C, $D6, $D6, $FE, $38, $10, $00, $82, $92, $00, $00, $00
+     5 				; PCOLR1 (Blue)
+     6 5410 00 00 00 00 28 54 + .byte $00, $00, $00, $00, $28, $54, $FE, $7C, $6C, $BA, $C6, $EE, $82, $00, $00, $28
+     7 				; PCOLR2 (Black)
+     8 5420 00 B8 4C 76 82 00 + .byte $00, $B8, $4C, $76, $82, $00, $00, $00, $00, $44, $28, $00, $6C, $7C, $54, $10
+     9 				; PCOLR3 (White)
+    10 5430 00 B8 7C 76 82 28 + .byte $00, $B8, $7C, $76, $82, $28, $00, $00, $00, $00, $10, $10, $00, $00, $28, $00
+    11
+    12 				; PCOLR0 (Brown)
+    13 5440 B8 44 02 88 7C D6 + .byte $B8, $44, $02, $88, $7C, $D6, $D6, $FE, $38, $10, $00, $82, $D0, $00, $00, $00
+    14 				; PCOLR1 (Blue)
+    15 5450 00 00 00 00 28 54 + .byte $00, $00, $00, $00, $28, $54, $FE, $7C, $6C, $BA, $C6, $EE, $C0, $00, $20, $0C
+    16 				; PCOLR2 (Black)
+    17 5460 00 B8 4C 76 82 00 + .byte $00, $B8, $4C, $76, $82, $00, $00, $00, $00, $44, $28, $00, $2C, $7C, $10, $10
+    18 				; PCOLR3 (White)
+    19 5470 00 B8 7C 76 82 28 + .byte $00, $B8, $7C, $76, $82, $28, $00, $00, $00, $00, $10, $10, $00, $00, $0C, $00
+    20
+    21 				; PCOLR0 (Brown)
+    22 5480 B8 44 02 88 7C D6 + .byte $B8, $44, $02, $88, $7C, $D6, $D6, $FE, $38, $10, $00, $82, $16, $00, $00, $00
+    23 				; PCOLR1 (Blue)
+    24 5490 00 00 00 00 28 54 + .byte $00, $00, $00, $00, $28, $54, $FE, $7C, $6C, $BA, $C6, $EE, $06, $00, $08, $60
+    25 				; PCOLR2 (Black)
+    26 54A0 00 B8 4C 76 82 00 + .byte $00, $B8, $4C, $76, $82, $00, $00, $00, $00, $44, $28, $00, $68, $7C, $10, $10
+    27 				; PCOLR3 (White)
+    28 54B0 00 B8 7C 76 82 28 + .byte $00, $B8, $7C, $76, $82, $28, $00, $00, $00, $00, $10, $10, $00, $00, $60, $00
+    29
+    30
+    31
+    32 				; PCOLR0 (Brown)
+    33 				; PCOLR0 (Brown)
+    34 54C0 B8 44 02 10 38 2C + .byte $B8, $44, $02, $10, $38, $2C, $2C, $3C, $32, $00, $00, $08, $28, $00, $00, $00
+    35 				; PCOLR1 (Blue)
+    36 54D0 00 00 00 00 10 28 + .byte $00, $00, $00, $00, $10, $28, $3C, $38, $38, $14, $0C, $1C, $08, $00, $00, $18
+    37 				; PCOLR2 (Black)
+    38 54E0 00 A8 54 6A 46 42 + .byte $00, $A8, $54, $6A, $46, $42, $02, $02, $04, $28, $10, $00, $14, $3C, $24, $00
+    39 				; PCOLR3 (White)
+    40 54F0 00 B8 7C 6E 46 52 + .byte $00, $B8, $7C, $6E, $46, $52, $02, $02, $04, $00, $20, $20, $00, $00, $18, $00
+    41
+    42
+    43 				; PCOLR0 (Brown)
+    44 				;.byte $48, $12, $A0, $00, $00, $20, $BA, $92, $D6, $D6, $7C, $BA, $92, $C6, $28, $00
+    45 				; PCOLR1 (Blue)
+    46 				;.byte $00, $00, $00, $00, $00, $00, $00, $00, $D6, $54, $BA, $C6, $FE, $BA, $44, $00
+    47 				; PCOLR2 (Black)
+    48 				;.byte $04, $4C, $5A, $FA, $F6, $DE, $44, $6C, $28, $28, $00, $00, $00, $00, $00, $6C
+    49 				; PCOLR3 (White)
+    50 				;.byte $04, $4C, $5E, $FE, $FE, $DE, $44, $44, $00, $00, $00, $00, $00, $00, $00, $00
+    51 					
+    52 				; missiles
+    53 				;.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $10, $30, $70, $70, $E0, $C0, $C6, $87, $8B, $8B, $4A, $0B, $03, $0F, $0E, $10, $31, $33, $73, $76, $7C, $6C, $28, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    54 				; player0
+    55 				;.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $20, $3C, $7C, $FE, $F3, $E1, $41, $43, $43, $43, $C7, $86, $BC, $BC, $98, $C0, $E0, $A0, $B0, $90, $18, $08, $0C, $0C, $0E, $06, $07, $03, $03, $01, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $07, $04, $04, $04, $04
+    56 				; player1
+    57 				;.byte $01, $01, $01, $05, $05, $05, $05, $05, $05, $05, $0D, $09, $19, $31, $F1, $E1, $C1, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $10, $1C, $1E, $3A, $32, $22, $62, $62, $46, $44, $45, $45, $45, $4D, $69, $78, $18, $C0, $C0, $C0, $C0, $80, $00, $00, $00, $00, $00, $00, $30, $19, $1F, $0F, $07, $00, $00, $00, $57, $55, $55, $55, $75
+    58 				; player2
+    59 				;.byte $80, $80, $80, $A0, $A0, $A0, $A0, $A0, $A0, $A0, $B0, $90, $98, $8C, $8F, $87, $83, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $04, $1C, $1C, $34, $64, $CC, $CC, $8C, $9C, $9D, $99, $19, $29, $A9, $E9, $C9, $D8, $18, $18, $10, $10, $30, $30, $30, $20, $60, $60, $E0, $C0, $C0, $C0, $80, $00, $00, $00, $00, $77, $55, $57, $54, $57
+    60 				; player3
+    61 				;.byte $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $44, $C4, $CC, $CC, $CC, $8D, $99, $99, $99, $B9, $39, $29, $69, $C9, $C9, $88, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $70, $40, $40, $40, $40
+    28 5500				icl 'tiledata.asm'
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\tiledata.asm
+     1 5500				org tiles
+     2 7000-74FC> 00 00 00 00		.byte $00, $00, $00, $00 ;0
+     3 7004 01 01 01 01			.byte $01, $01, $01, $01 ;1
+     4 7008 02 02 02 02			.byte $02, $02, $02, $02 ;2
+     5 700C 03 03 03 03			.byte $03, $03, $03, $03 ;3
+     6 7010 83 83 83 83			.byte $83, $83, $83, $83 ;4
+     7 7014 00 02 02 00			.byte $00, $02, $02, $00 ;5
+     8 7018 00 01 01 00			.byte $00, $01, $01, $00 ;6
+     9 701C 83 82 82 83			.byte $83, $82, $82, $83 ;7
+    10 7020 83 81 81 83			.byte $83, $81, $81, $83 ;8
+    11 7024 04 05 06 07			.byte $04, $05, $06, $07 ;9
+    12 7028 08 09 0A 0B			.byte $08, $09, $0A, $0B ;10
+    13 702C 0A 0B 0A 0B			.byte $0A, $0B, $0A, $0B ;11
+    14 7030 0C 0D 0C 0D			.byte $0C, $0D, $0C, $0D ;12
+    15 7034 0E 0F 0A 10			.byte $0E, $0F, $0A, $10 ;13
+    16 7038 11 12 13 0B			.byte $11, $12, $13, $0B ;14
+    17 703C 14 15 16 17			.byte $14, $15, $16, $17 ;15
+    18 7040 18 19 18 1A			.byte $18, $19, $18, $1A ;16
+    19 7044 1B 1C 01 1D			.byte $1B, $1C, $01, $1D ;17
+    20 7048 1E 1F 20 21			.byte $1E, $1F, $20, $21 ;18
+    21 704C 22 23 24 25			.byte $22, $23, $24, $25 ;19
+    22 7050 26 27 28 29			.byte $26, $27, $28, $29 ;20
+    23 7054 2A 2B 2C 2D			.byte $2A, $2B, $2C, $2D ;21
+    24 7058 2E 2F 30 31			.byte $2E, $2F, $30, $31 ;22
+    25 705C 32 33 34 35			.byte $32, $33, $34, $35 ;23
+    26 7060 36 37 38 39			.byte $36, $37, $38, $39 ;24
+    27 7064 3A 3B 3C 3D			.byte $3A, $3B, $3C, $3D ;25
+    28 7068 04 3E 3F 40			.byte $04, $3E, $3F, $40 ;26
+    29 706C 41 42 43 44			.byte $41, $42, $43, $44 ;27
+    30 7070 45 46 47 48			.byte $45, $46, $47, $48 ;28
+    31 7074 49 4A 4B 4C			.byte $49, $4A, $4B, $4C ;29
+    32 7078 4D 4E 4F 50			.byte $4D, $4E, $4F, $50 ;30
+    33 707C 51 52 53 54			.byte $51, $52, $53, $54 ;31
+    34 7080 04 55 56 57			.byte $04, $55, $56, $57 ;32
+    35 7084 56 57 56 58			.byte $56, $57, $56, $58 ;33
+    36 7088 59 5A 5B 03			.byte $59, $5A, $5B, $03 ;34
+    37 708C 5B 5C 5D 5E			.byte $5B, $5C, $5D, $5E ;35
+    38 7090 5F 60 03 61			.byte $5F, $60, $03, $61 ;36
+    39 7094 62 61 5E 63			.byte $62, $61, $5E, $63 ;37
+    40 7098 64 42 65 66			.byte $64, $42, $65, $66 ;38
+    41 709C 65 66 67 66			.byte $65, $66, $67, $66 ;39
+    42 70A0 F4 F5 F6 F7			.byte $F4, $F5, $F6, $F7 ;40
+    43 70A4 78 79 7A 7B			.byte $78, $79, $7A, $7B ;41
+    44 70A8 7C 7D 7E 7F			.byte $7C, $7D, $7E, $7F ;42
+    45 70AC E8 EC EE 80			.byte $E8, $EC, $EE, $80 ;43
+    46 70B0 EC EC 80 80			.byte $EC, $EC, $80, $80 ;44
+    47 70B4 EC E9 80 EF			.byte $EC, $E9, $80, $EF ;45
+    48 70B8 F0 80 80 80			.byte $F0, $80, $80, $80 ;46
+    49 70BC 80 F1 80 80			.byte $80, $F1, $80, $80 ;47
+    50 70C0 80 80 F2 80			.byte $80, $80, $F2, $80 ;48
+    51 70C4 80 80 80 F3			.byte $80, $80, $80, $F3 ;49
+    52 70C8 F0 80 F2 80			.byte $F0, $80, $F2, $80 ;50
+    53 70CC 80 F1 80 F3			.byte $80, $F1, $80, $F3 ;51
+    54 70D0 EC EC F2 F3			.byte $EC, $EC, $F2, $F3 ;52
+    55 70D4 EE EF EA EB			.byte $EE, $EF, $EA, $EB ;53
+    56 70D8 EC EC ED ED			.byte $EC, $EC, $ED, $ED ;54
+    57 70DC EE EF EE EF			.byte $EE, $EF, $EE, $EF ;55
+    58 70E0 F0 F1 ED ED			.byte $F0, $F1, $ED, $ED ;56
+    59 70E4 E8 E9 EE EF			.byte $E8, $E9, $EE, $EF ;57
+    60 70E8 F0 F1 F2 F3			.byte $F0, $F1, $F2, $F3 ;58
+    61 70EC EE 80 EA ED			.byte $EE, $80, $EA, $ED ;59
+    62 70F0 80 EF ED EB			.byte $80, $EF, $ED, $EB ;60
+    63 70F4 80 80 ED ED			.byte $80, $80, $ED, $ED ;61
+    64 70F8 06 07 06 07			.byte $06, $07, $06, $07 ;62
+    65
+    66
+    29 					
+    30 				* --------------------------------------- *
+    31 				* Proc: setup_colours                     *
+    32 				* Sets up colours                         *
+    33 				* --------------------------------------- *
+    34 70FC			.proc setup_colours
+    35 = 0006			med_gray = $06
+    36 = 000A			lt_gray = $0A
+    37 = 00C2			sap_green = $C2
+    38 = 00F2			dark_sienna = $F2
+    39 = 0000			midnight_black = $00
+    40 = 0074			phthalo_blue = $74
+    41 = 00E0			mountain_mx = $E0
+    42 = 000D			titanium_white = $0D
+    43 = 00F8			vandyke_brown = $F8
+    44 = 0092			title_colour = $92
+    45
+    46 					; Character Set Colours
+    47 70FC A9 06 8D C4 02		mva #med_gray COLOR0        ; %01
+    48 7101 A9 0A 8D C5 02		mva #lt_gray COLOR1         ; %10
+    49 7106 A9 F2 8D C6 02		mva #dark_sienna COLOR2     ; %11
+    50 710B A9 C2 8D C7 02		mva #sap_green COLOR3       ; %11 (inverse)
+    51 7110 A9 00 8D C8 02		mva #midnight_black COLOR4  ; %00
+    52
+    53 					; Player-Missile Colours
+    54 7115 A9 F8 8D C0 02		mva #vandyke_brown PCOLR0
+    55 711A A9 74 8D C1 02		mva #phthalo_blue PCOLR1
+    56 711F A9 E0 8D C2 02		mva #mountain_mx PCOLR2	
+    57 7124 A9 0D 8D C3 02		mva #titanium_white PCOLR3
+    58 					
+    59 7129 60				rts
+    60 					.endp
+    61 						
+    62 				* --------------------------------------- *
+    63 				* Proc: clear_pmg                         *
+    64 				* Clears memory for Player-Missile GFX    *
+    65 				* --------------------------------------- *
+    66 712A			.proc clear_pmg
+    67 = 6300			pmg_m4 = pmg + $300
+    68 = 6400			pmg_p0 = pmg + $400
+    69 = 6500			pmg_p1 = pmg + $500
+    70 = 6600			pmg_p2 = pmg + $600
+    71 = 6700			pmg_p3 = pmg + $700	
+    72 					
+    73 712A A2 F0			ldx #$F0
+    74 712C A9 00			lda #0
+    75 					
+    76 712E			loop
+    77 712E CA				dex
+    78 712F 9D 00 63			sta pmg_m4,x
+    79 7132 9D 00 64			sta pmg_p0,x
+    80 7135 9D 00 65			sta pmg_p1,x
+    81 7138 9D 00 66			sta pmg_p2,x
+    82 713B 9D 00 67			sta pmg_p3,x
+    83 713E D0 EE			bne loop
+    84 7140 60				rts
+    85 					.endp
+    86
+    87 				* --------------------------------------- *
+    88 				* Proc: load_pmg                          *
+    89 				* Load PMG Graphics                       *
+    90 				* --------------------------------------- *
+    91 7141			.proc load_pmg
+    92 				;pmg_m4 = pmg + $300
+    93 = 6400			pmg_p0 = pmg + $400
+    94 = 6500			pmg_p1 = pmg + $500
+    95 = 6600			pmg_p2 = pmg + $600
+    96 = 6700			pmg_p3 = pmg + $700	
+    97 					
+    98 7141 A2 00			ldx #0
+    99 7143			loop
+   100 7143 BD 00 54 9D 45 64		mva pmgdata,x pmg_p0+69,x
+   101 7149 BD 40 54 9D 63 64		mva pmgdata+64,x pmg_p0+99,x
+   102 714F BD 00 54 9D 81 64		mva pmgdata,x pmg_p0+129,x
+   103 7155 BD 80 54 9D A0 64		mva pmgdata,x+128 pmg_p0+160,x
+   104 715B BD 00 54 9D BE 64		mva pmgdata,x pmg_p0+190,x
+   105 7161 BD 10 54 9D 45 65		mva pmgdata+16,x pmg_p1+69,x
+   106 7167 BD 50 54 9D 63 65		mva pmgdata+80,x pmg_p1+99,x
+   107 716D BD 10 54 9D 81 65		mva pmgdata+16,x pmg_p1+129,x
+   108 7173 BD 90 54 9D A0 65		mva pmgdata+144,x pmg_p1+160,x
+   109 7179 BD 10 54 9D BE 65		mva pmgdata+16,x pmg_p1+190,x
+   110 717F BD 20 54 9D 45 66		mva pmgdata+32,x pmg_p2+69,x
+   111 7185 BD 60 54 9D 63 66		mva pmgdata+96,x pmg_p2+99,x
+   112 718B BD 20 54 9D 81 66		mva pmgdata+32,x pmg_p2+129,x
+   113 7191 BD A0 54 9D A0 66		mva pmgdata+160,x pmg_p2+160,x
+   114 7197 BD 20 54 9D BE 66		mva pmgdata+32,x pmg_p2+190,x
+   115 719D BD 30 54 9D 45 67		mva pmgdata+48,x pmg_p3+69,x
+   116 71A3 BD 70 54 9D 63 67		mva pmgdata+112,x pmg_p3+99,x
+   117 71A9 BD 30 54 9D 81 67		mva pmgdata+48,x pmg_p3+129,x
+   118 71AF BD B0 54 9D A0 67		mva pmgdata+176,x pmg_p3+160,x
+   119 71B5 BD 30 54 9D BE 67		mva pmgdata+48,x pmg_p3+190,x
+   120 71BB E8				inx
+   121 71BC E0 10			cpx #16
+   122 71BE D0 83			bne loop
+   123 71C0 60				rts
+   124 					.endp
+   125 					
+   126 				* --------------------------------------- *
+   127 				* Proc: setup_pmg                         *
+   128 				* Sets up Player-Missile Geaphics System  *
+   129 				* --------------------------------------- *
+   130 71C1			.proc setup_pmg
+   131 71C1 A9 60 8D 07 D4		mva #>pmg PMBASE
+   132 71C6 A9 3E 8D 2F 02		mva #62 SDMCTL   ; Single Line resolution	
+   133 71CB A9 03 8D 1D D0		mva #3 GRACTL    ; Enable PMG 3
+   134 71D0 A9 21 8D 6F 02		mva #33 GRPRIOR   ; Give players priority and enables overlapping colors
+   135 71D5 A9 7C			lda #124
+   136 71D7 8D 00 D0			sta HPOSP0
+   137 71DA 8D 01 D0			sta HPOSP1
+   138 71DD 8D 02 D0			sta HPOSP2
+   139 71E0 8D 03 D0			sta HPOSP3
+   140 71E3 60				rts
+   141 					.endp
+   142 					
+   143 				* --------------------------------------- *
+   144 				* Macro: blit_row                         *
+   145 				* Copies one line of map to screen        *
+   146 				* --------------------------------------- *
+   147 					
+   148 				.macro blit_row map, screen, tiles
+   149 					ldx #0
+   150 					ldy #0
+   151 				loop
+   152 					txa
+   153 					pha
+   154 					lda :map,x
+   155 					asl
+   156 					asl
+   157 					tax
+   158 					lda :tiles,x
+   159 					sta :screen,y
+   160 					lda :tiles+2,x
+   161 					sta :screen+40,y
+   162 					inx
+   163 					iny
+   164 					lda :tiles,x
+   165 					sta :screen,y
+   166 					lda :tiles+2,x
+   167 					sta :screen+40,y
+   168 					iny
+   169 					pla
+   170 					tax
+   171 					inx
+   172 					cpx #20
+   173 					bne loop
+   174 					.endm
+   175 					
+   176 				* --------------------------------------- *
+   177 				* Proc: display_map                       *
+   178 				* Displays the current map                *
+   179 				* --------------------------------------- *
+   180 71E4			.proc display_map
+   181 71E4				blit_row map, screen, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 71E4 A2 00			ldx #0
+     2 71E6 A0 00			ldy #0
+     3 71E8			loop
+     4 71E8 8A				txa
+     5 71E9 48				pha
+     6 71EA BD 0D 74			lda MAP,x
+     7 71ED 0A				asl
+     8 71EE 0A				asl
+     9 71EF AA				tax
+    10 71F0 BD 00 70			lda TILES,x
+    11 71F3 99 00 40			sta SCREEN,y
+    12 71F6 BD 02 70			lda TILES+2,x
+    13 71F9 99 28 40			sta SCREEN+40,y
+    14 71FC E8				inx
+    15 71FD C8				iny
+    16 71FE BD 00 70			lda TILES,x
+    17 7201 99 00 40			sta SCREEN,y
+    18 7204 BD 02 70			lda TILES+2,x
+    19 7207 99 28 40			sta SCREEN+40,y
+    20 720A C8				iny
+    21 720B 68				pla
+    22 720C AA				tax
+    23 720D E8				inx
+    24 720E E0 14			cpx #20
+    25 7210 D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   182 7212				blit_row map+20, screen+80, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 7212 A2 00			ldx #0
+     2 7214 A0 00			ldy #0
+     3 7216			loop
+     4 7216 8A				txa
+     5 7217 48				pha
+     6 7218 BD 21 74			lda MAP+20,x
+     7 721B 0A				asl
+     8 721C 0A				asl
+     9 721D AA				tax
+    10 721E BD 00 70			lda TILES,x
+    11 7221 99 50 40			sta SCREEN+80,y
+    12 7224 BD 02 70			lda TILES+2,x
+    13 7227 99 78 40			sta SCREEN+80+40,y
+    14 722A E8				inx
+    15 722B C8				iny
+    16 722C BD 00 70			lda TILES,x
+    17 722F 99 50 40			sta SCREEN+80,y
+    18 7232 BD 02 70			lda TILES+2,x
+    19 7235 99 78 40			sta SCREEN+80+40,y
+    20 7238 C8				iny
+    21 7239 68				pla
+    22 723A AA				tax
+    23 723B E8				inx
+    24 723C E0 14			cpx #20
+    25 723E D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   183 7240				blit_row map+40, screen+160, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 7240 A2 00			ldx #0
+     2 7242 A0 00			ldy #0
+     3 7244			loop
+     4 7244 8A				txa
+     5 7245 48				pha
+     6 7246 BD 35 74			lda MAP+40,x
+     7 7249 0A				asl
+     8 724A 0A				asl
+     9 724B AA				tax
+    10 724C BD 00 70			lda TILES,x
+    11 724F 99 A0 40			sta SCREEN+160,y
+    12 7252 BD 02 70			lda TILES+2,x
+    13 7255 99 C8 40			sta SCREEN+160+40,y
+    14 7258 E8				inx
+    15 7259 C8				iny
+    16 725A BD 00 70			lda TILES,x
+    17 725D 99 A0 40			sta SCREEN+160,y
+    18 7260 BD 02 70			lda TILES+2,x
+    19 7263 99 C8 40			sta SCREEN+160+40,y
+    20 7266 C8				iny
+    21 7267 68				pla
+    22 7268 AA				tax
+    23 7269 E8				inx
+    24 726A E0 14			cpx #20
+    25 726C D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   184 726E				blit_row map+60, screen+240, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 726E A2 00			ldx #0
+     2 7270 A0 00			ldy #0
+     3 7272			loop
+     4 7272 8A				txa
+     5 7273 48				pha
+     6 7274 BD 49 74			lda MAP+60,x
+     7 7277 0A				asl
+     8 7278 0A				asl
+     9 7279 AA				tax
+    10 727A BD 00 70			lda TILES,x
+    11 727D 99 F0 40			sta SCREEN+240,y
+    12 7280 BD 02 70			lda TILES+2,x
+    13 7283 99 18 41			sta SCREEN+240+40,y
+    14 7286 E8				inx
+    15 7287 C8				iny
+    16 7288 BD 00 70			lda TILES,x
+    17 728B 99 F0 40			sta SCREEN+240,y
+    18 728E BD 02 70			lda TILES+2,x
+    19 7291 99 18 41			sta SCREEN+240+40,y
+    20 7294 C8				iny
+    21 7295 68				pla
+    22 7296 AA				tax
+    23 7297 E8				inx
+    24 7298 E0 14			cpx #20
+    25 729A D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   185 729C				blit_row map+80, screen+320, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 729C A2 00			ldx #0
+     2 729E A0 00			ldy #0
+     3 72A0			loop
+     4 72A0 8A				txa
+     5 72A1 48				pha
+     6 72A2 BD 5D 74			lda MAP+80,x
+     7 72A5 0A				asl
+     8 72A6 0A				asl
+     9 72A7 AA				tax
+    10 72A8 BD 00 70			lda TILES,x
+    11 72AB 99 40 41			sta SCREEN+320,y
+    12 72AE BD 02 70			lda TILES+2,x
+    13 72B1 99 68 41			sta SCREEN+320+40,y
+    14 72B4 E8				inx
+    15 72B5 C8				iny
+    16 72B6 BD 00 70			lda TILES,x
+    17 72B9 99 40 41			sta SCREEN+320,y
+    18 72BC BD 02 70			lda TILES+2,x
+    19 72BF 99 68 41			sta SCREEN+320+40,y
+    20 72C2 C8				iny
+    21 72C3 68				pla
+    22 72C4 AA				tax
+    23 72C5 E8				inx
+    24 72C6 E0 14			cpx #20
+    25 72C8 D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   186 72CA				blit_row map+100, screen+400, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 72CA A2 00			ldx #0
+     2 72CC A0 00			ldy #0
+     3 72CE			loop
+     4 72CE 8A				txa
+     5 72CF 48				pha
+     6 72D0 BD 71 74			lda MAP+100,x
+     7 72D3 0A				asl
+     8 72D4 0A				asl
+     9 72D5 AA				tax
+    10 72D6 BD 00 70			lda TILES,x
+    11 72D9 99 90 41			sta SCREEN+400,y
+    12 72DC BD 02 70			lda TILES+2,x
+    13 72DF 99 B8 41			sta SCREEN+400+40,y
+    14 72E2 E8				inx
+    15 72E3 C8				iny
+    16 72E4 BD 00 70			lda TILES,x
+    17 72E7 99 90 41			sta SCREEN+400,y
+    18 72EA BD 02 70			lda TILES+2,x
+    19 72ED 99 B8 41			sta SCREEN+400+40,y
+    20 72F0 C8				iny
+    21 72F1 68				pla
+    22 72F2 AA				tax
+    23 72F3 E8				inx
+    24 72F4 E0 14			cpx #20
+    25 72F6 D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   187 72F8				blit_row map+120, screen+480, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 72F8 A2 00			ldx #0
+     2 72FA A0 00			ldy #0
+     3 72FC			loop
+     4 72FC 8A				txa
+     5 72FD 48				pha
+     6 72FE BD 85 74			lda MAP+120,x
+     7 7301 0A				asl
+     8 7302 0A				asl
+     9 7303 AA				tax
+    10 7304 BD 00 70			lda TILES,x
+    11 7307 99 E0 41			sta SCREEN+480,y
+    12 730A BD 02 70			lda TILES+2,x
+    13 730D 99 08 42			sta SCREEN+480+40,y
+    14 7310 E8				inx
+    15 7311 C8				iny
+    16 7312 BD 00 70			lda TILES,x
+    17 7315 99 E0 41			sta SCREEN+480,y
+    18 7318 BD 02 70			lda TILES+2,x
+    19 731B 99 08 42			sta SCREEN+480+40,y
+    20 731E C8				iny
+    21 731F 68				pla
+    22 7320 AA				tax
+    23 7321 E8				inx
+    24 7322 E0 14			cpx #20
+    25 7324 D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   188 7326				blit_row map+140, screen+560, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 7326 A2 00			ldx #0
+     2 7328 A0 00			ldy #0
+     3 732A			loop
+     4 732A 8A				txa
+     5 732B 48				pha
+     6 732C BD 99 74			lda MAP+140,x
+     7 732F 0A				asl
+     8 7330 0A				asl
+     9 7331 AA				tax
+    10 7332 BD 00 70			lda TILES,x
+    11 7335 99 30 42			sta SCREEN+560,y
+    12 7338 BD 02 70			lda TILES+2,x
+    13 733B 99 58 42			sta SCREEN+560+40,y
+    14 733E E8				inx
+    15 733F C8				iny
+    16 7340 BD 00 70			lda TILES,x
+    17 7343 99 30 42			sta SCREEN+560,y
+    18 7346 BD 02 70			lda TILES+2,x
+    19 7349 99 58 42			sta SCREEN+560+40,y
+    20 734C C8				iny
+    21 734D 68				pla
+    22 734E AA				tax
+    23 734F E8				inx
+    24 7350 E0 14			cpx #20
+    25 7352 D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   189 7354				blit_row map+160, screen+640, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 7354 A2 00			ldx #0
+     2 7356 A0 00			ldy #0
+     3 7358			loop
+     4 7358 8A				txa
+     5 7359 48				pha
+     6 735A BD AD 74			lda MAP+160,x
+     7 735D 0A				asl
+     8 735E 0A				asl
+     9 735F AA				tax
+    10 7360 BD 00 70			lda TILES,x
+    11 7363 99 80 42			sta SCREEN+640,y
+    12 7366 BD 02 70			lda TILES+2,x
+    13 7369 99 A8 42			sta SCREEN+640+40,y
+    14 736C E8				inx
+    15 736D C8				iny
+    16 736E BD 00 70			lda TILES,x
+    17 7371 99 80 42			sta SCREEN+640,y
+    18 7374 BD 02 70			lda TILES+2,x
+    19 7377 99 A8 42			sta SCREEN+640+40,y
+    20 737A C8				iny
+    21 737B 68				pla
+    22 737C AA				tax
+    23 737D E8				inx
+    24 737E E0 14			cpx #20
+    25 7380 D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   190 7382				blit_row map+180, screen+720, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 7382 A2 00			ldx #0
+     2 7384 A0 00			ldy #0
+     3 7386			loop
+     4 7386 8A				txa
+     5 7387 48				pha
+     6 7388 BD C1 74			lda MAP+180,x
+     7 738B 0A				asl
+     8 738C 0A				asl
+     9 738D AA				tax
+    10 738E BD 00 70			lda TILES,x
+    11 7391 99 D0 42			sta SCREEN+720,y
+    12 7394 BD 02 70			lda TILES+2,x
+    13 7397 99 F8 42			sta SCREEN+720+40,y
+    14 739A E8				inx
+    15 739B C8				iny
+    16 739C BD 00 70			lda TILES,x
+    17 739F 99 D0 42			sta SCREEN+720,y
+    18 73A2 BD 02 70			lda TILES+2,x
+    19 73A5 99 F8 42			sta SCREEN+720+40,y
+    20 73A8 C8				iny
+    21 73A9 68				pla
+    22 73AA AA				tax
+    23 73AB E8				inx
+    24 73AC E0 14			cpx #20
+    25 73AE D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   191 73B0				blit_row map+200, screen+800, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 73B0 A2 00			ldx #0
+     2 73B2 A0 00			ldy #0
+     3 73B4			loop
+     4 73B4 8A				txa
+     5 73B5 48				pha
+     6 73B6 BD D5 74			lda MAP+200,x
+     7 73B9 0A				asl
+     8 73BA 0A				asl
+     9 73BB AA				tax
+    10 73BC BD 00 70			lda TILES,x
+    11 73BF 99 20 43			sta SCREEN+800,y
+    12 73C2 BD 02 70			lda TILES+2,x
+    13 73C5 99 48 43			sta SCREEN+800+40,y
+    14 73C8 E8				inx
+    15 73C9 C8				iny
+    16 73CA BD 00 70			lda TILES,x
+    17 73CD 99 20 43			sta SCREEN+800,y
+    18 73D0 BD 02 70			lda TILES+2,x
+    19 73D3 99 48 43			sta SCREEN+800+40,y
+    20 73D6 C8				iny
+    21 73D7 68				pla
+    22 73D8 AA				tax
+    23 73D9 E8				inx
+    24 73DA E0 14			cpx #20
+    25 73DC D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   192 73DE				blit_row map+220, screen+880, tiles
+Macro: BLIT_ROW [Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm]
+     1 73DE A2 00			ldx #0
+     2 73E0 A0 00			ldy #0
+     3 73E2			loop
+     4 73E2 8A				txa
+     5 73E3 48				pha
+     6 73E4 BD E9 74			lda MAP+220,x
+     7 73E7 0A				asl
+     8 73E8 0A				asl
+     9 73E9 AA				tax
+    10 73EA BD 00 70			lda TILES,x
+    11 73ED 99 70 43			sta SCREEN+880,y
+    12 73F0 BD 02 70			lda TILES+2,x
+    13 73F3 99 98 43			sta SCREEN+880+40,y
+    14 73F6 E8				inx
+    15 73F7 C8				iny
+    16 73F8 BD 00 70			lda TILES,x
+    17 73FB 99 70 43			sta SCREEN+880,y
+    18 73FE BD 02 70			lda TILES+2,x
+    19 7401 99 98 43			sta SCREEN+880+40,y
+    20 7404 C8				iny
+    21 7405 68				pla
+    22 7406 AA				tax
+    23 7407 E8				inx
+    24 7408 E0 14			cpx #20
+    25 740A D0 D6			bne loop
+Source: C:\jac\wudsn\Workspace\Atari800\Edventures in Programming\Rogue Like Ep.8\Hello World8.asm
+   193 740C 60				rts
+   194
+   195 740D			map
+   196 740D 00 00 00 00 00 0D + .byte 0,0,0,0,0,13,9,9,32,34,36,38,9,9,14,0,0,0,0,0
+   197 7421 00 00 00 00 00 0C + .byte 0,0,0,0,0,12,62,62,33,35,37,39,62,62,12,0,0,0,0,0
+   198 7435 09 09 09 09 09 0E + .byte 9,9,9,9,9,14,6,6,6,6,6,6,6,6,13,9,9,9,9,9
+   199 7449 06 06 06 06 06 06 + .byte 6,6,6,6,6,6,5,5,5,5,5,5,5,5,6,6,6,6,6,6
+   200 745D 05 05 05 05 05 05 + .byte 5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5
+   201 7471 05 05 05 05 05 05 + .byte 5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5
+   202 7485 0C 09 09 10 09 09 + .byte 12,9,9,16,9,9,12,5,5,5,5,5,5,12,9,9,17,9,9,12
+   203 7499 0C 10 10 10 10 10 + .byte 12,16,16,16,16,16,13,12,9,9,9,9,12,14,17,17,17,17,17,12
+   204 74AD 0C 10 10 10 10 10 + .byte 12,16,16,16,16,16,16,10,15,15,15,15,10,17,17,17,17,17,17,12
+   205 74C1 0C 10 10 10 10 10 + .byte 12,16,16,16,16,16,16,15,15,15,15,15,15,17,17,17,17,17,17,12
+   206 74D5 0A 09 0C 10 10 10 + .byte 10,9,12,16,16,16,16,12,15,15,15,15,12,17,17,17,17,12,9,10
+   207 74E9 00 00 0A 09 09 09 + .byte 0,0,10,9,9,9,9,9,9,9,9,9,9,9,9,9,9,10,0,0
+   208
+   209 				;.byte 0,0,0,0,0,0,0,0,0,0,14,15,4,5,4,5,4,85,89,90,95,96,100,66,4,5,4,5,17,18,0,0,0,0,0,0,0,0,0,0
+   210 				;.byte 0,0,0,0,0,0,0,0,0,0,10,16,6,7,6,7,86,87,91,3,3,97,101,102,6,7,6,7,19,11,0,0,0,0,0,0,0,0,0,0
+   211 				;.byte 0,0,0,0,0,0,0,0,0,0,12,13,6,7,6,7,86,87,91,92,98,97,101,102,6,7,6,7,12,13,0,0,0,0,0,0,0,0,0,0
+   212 				;.byte 0,0,0,0,0,0,0,0,0,0,12,13,6,7,6,7,86,88,93,94,94,99,103,102,6,7,6,7,12,13,0,0,0,0,0,0,0,0,0,0
+   213 				;.byte 4,5,4,5,4,5,4,5,4,5,17,18,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,14,15,4,5,4,5,4,5,4,5,4,5
+   214 				;.byte 6,7,6,7,6,7,6,7,6,7,19,11,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,10,16,6,7,6,7,6,7,6,7,6,7
+   215 				;.byte 0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,1,0,1,0,1,0,1,0,1,0,1
+   216 				;.byte 1,0,1,0,1,0,1,0,1,0,1,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0
+   217 				;.byte 0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2
+   218 				;.byte 2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0
+   219 				;.byte 0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2
+   220 				;.byte 2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0
+   221 				;.byte 12,13,4,5,4,5,24,25,4,5,4,5,12,13,0,2,0,2,0,2,0,2,0,2,0,2,12,13,4,5,4,5,27,28,4,5,4,5,12,13
+   222 				;.byte 12,13,6,7,6,7,24,26,6,7,6,7,12,13,2,0,2,0,2,0,2,0,2,0,2,0,12,13,6,7,6,7,1,29,6,7,6,7,12,13
+   223 				;.byte 12,13,24,25,24,25,24,25,24,25,24,25,14,15,12,13,4,5,4,5,4,5,4,5,12,13,17,18,27,28,27,28,27,28,27,28,27,28,12,13
+   224 				;.byte 12,13,24,26,24,26,24,26,24,26,24,26,10,16,12,13,6,7,6,7,6,7,6,7,12,13,19,11,1,29,1,29,1,29,1,29,1,29,12,13
+   225 				;.byte 12,13,24,25,24,25,24,25,24,25,24,25,24,25,8,9,20,21,20,21,20,21,20,21,8,9,27,28,27,28,27,28,27,28,27,28,27,28,12,13
+   226 				;.byte 12,13,24,26,24,26,24,26,24,26,24,26,24,26,10,11,22,23,22,23,22,23,22,23,10,11,1,29,1,29,1,29,1,29,1,29,1,29,12,13
+   227 				;.byte 12,13,24,25,24,25,24,25,24,25,24,25,24,25,20,21,20,21,20,21,20,21,20,21,20,21,27,28,27,28,27,28,27,28,27,28,27,28,12,13
+   228 				;.byte 12,13,24,26,24,26,24,26,24,26,24,26,24,26,22,23,22,23,22,23,22,23,22,23,22,23,1,29,1,29,1,29,1,29,1,29,1,29,12,13
+   229 				;.byte 8,9,4,5,12,13,24,25,24,25,24,25,24,25,12,13,20,21,20,21,20,21,20,21,12,13,27,28,27,28,27,28,27,28,12,13,4,5,8,9
+   230 				;.byte 10,11,6,7,12,13,24,26,24,26,24,26,24,26,12,13,22,23,22,23,22,23,22,23,12,13,1,29,1,29,1,29,1,29,12,13,6,7,10,11
+   231 				;.byte 0,0,0,0,8,9,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,4,5,8,9,0,0,0,0
+   232 				;.byte 0,0,0,0,10,11,6,7,6,7,6,7,6,7,6,7,6,7,6,7,6,7,6,7,6,7,6,7,6,7,6,7,6,7,10,11,0,0,0,0
+   233 					.endp
+   234
+   235 					
